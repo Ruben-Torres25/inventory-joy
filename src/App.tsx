@@ -6,6 +6,13 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import DashboardPage from "@/pages/Dashboard";
 import ProductsPage from "@/pages/Products";
+import ClientsPage from "@/pages/Clients";
+import SuppliersPage from "@/pages/Suppliers";
+import SalesPage from "@/pages/Sales";
+import PurchasesPage from "@/pages/Purchases";
+import CashPage from "@/pages/Cash";
+import ReportsPage from "@/pages/Reports";
+import HistoryPage from "@/pages/History";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -27,13 +34,13 @@ const App = () => (
           <Route element={<AppLayout />}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/products" element={<ProductsPage />} />
-            <Route path="/clients" element={<ComingSoon title="Clientes" />} />
-            <Route path="/suppliers" element={<ComingSoon title="Proveedores" />} />
-            <Route path="/sales" element={<ComingSoon title="Ventas" />} />
-            <Route path="/purchases" element={<ComingSoon title="Compras" />} />
-            <Route path="/cash" element={<ComingSoon title="Caja" />} />
-            <Route path="/reports" element={<ComingSoon title="Reportes" />} />
-            <Route path="/history" element={<ComingSoon title="Historial" />} />
+            <Route path="/clients" element={<ClientsPage />} />
+            <Route path="/suppliers" element={<SuppliersPage />} />
+            <Route path="/sales" element={<SalesPage />} />
+            <Route path="/purchases" element={<PurchasesPage />} />
+            <Route path="/cash" element={<CashPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/history" element={<HistoryPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -41,15 +48,5 @@ const App = () => (
     </TooltipProvider>
   </QueryClientProvider>
 );
-
-// Placeholder for pages not yet implemented
-function ComingSoon({ title }: { title: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20">
-      <h2 className="text-2xl font-bold">{title}</h2>
-      <p className="mt-2 text-muted-foreground">Módulo en construcción...</p>
-    </div>
-  );
-}
 
 export default App;
