@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, ArrowUpCircle, ArrowDownCircle, Wallet } from "lucide-react";
 import { cashApi } from "@/lib/api";
-import { CashMovementType, PaymentMethod } from "@/types";
+import { CashMovementType, PaymentMethod, CreateCashMovementDto } from "@/types";
 import { formatCurrency, formatDateTime, formatPaymentMethod, cashMovementTypeLabels } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,22 +44,22 @@ export default function CashPage() {
   const queryParams = {
     from: dateRange.from ? formatDateForApi(dateRange.from) : undefined,
     to: dateRange.to ? formatDateForApi(dateRange.to) : undefined,
-    type: typeFilter as CashMovementType | undefined,
-    paymentMethod: methodFilter as PaymentMethod | undefined,
+    type: (typeFilter || undefined) as CashMovementType | undefined,
+    method: (methodFilter || undefined) as PaymentMethod | undefined,
   };
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
     queryKey: ["cash-summary", queryParams],
-    queryFn: () => cashApi.getSummary(queryParams),
+    queryFn: () => cashApi.getSummary({ from: queryParams.from, to: queryParams.to }),
   });
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["cash-movements", { ...queryParams, page, limit }],
-    queryFn: () => cashApi.getAll({ ...queryParams, page, limit }),
+    queryFn: () => cashApi.getMovements({ ...queryParams, page, limit }),
   });
 
   const createMutation = useMutation({
-    mutationFn: cashApi.create,
+    mutationFn: (data: CreateCashMovementDto) => cashApi.createMovement(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cash-movements"] });
       queryClient.invalidateQueries({ queryKey: ["cash-summary"] });
@@ -73,7 +73,12 @@ export default function CashPage() {
   });
 
   const handleExport = () => {
-    cashApi.export(queryParams);
+    cashApi.export({
+      from: queryParams.from,
+      to: queryParams.to,
+      type: queryParams.type,
+      method: queryParams.method,
+    });
   };
 
   if (isLoading || summaryLoading) return <LoadingState />;
@@ -90,7 +95,7 @@ export default function CashPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
-              {formatCurrency(summary?.totalIn || 0)}
+              {formatCurrency(summary?.in.total || 0)}
             </div>
           </CardContent>
         </Card>
@@ -101,7 +106,7 @@ export default function CashPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {formatCurrency(summary?.totalOut || 0)}
+              {formatCurrency(summary?.out.total || 0)}
             </div>
           </CardContent>
         </Card>
@@ -121,15 +126,25 @@ export default function CashPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Por método</CardTitle>
+            <CardTitle className="text-sm font-medium">Por método (Ingresos)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1">
-            {summary?.byPaymentMethod && Object.entries(summary.byPaymentMethod).map(([method, amount]) => (
-              <div key={method} className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{formatPaymentMethod(method)}:</span>
-                <span className="font-medium">{formatCurrency(amount as number)}</span>
-              </div>
-            ))}
+            {summary?.in.byMethod && (
+              <>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Efectivo:</span>
+                  <span className="font-medium">{formatCurrency(summary.in.byMethod.CASH)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Tarjeta:</span>
+                  <span className="font-medium">{formatCurrency(summary.in.byMethod.CARD)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Transferencia:</span>
+                  <span className="font-medium">{formatCurrency(summary.in.byMethod.TRANSFER)}</span>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -140,7 +155,7 @@ export default function CashPage() {
           <DateRangePicker
             from={dateRange.from}
             to={dateRange.to}
-            onSelect={(range) => setDateRange(range || {})}
+            onChange={(range) => setDateRange(range || {})}
           />
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[150px]">
@@ -148,8 +163,8 @@ export default function CashPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Todos los tipos</SelectItem>
-              <SelectItem value={CashMovementType.IN}>Ingreso</SelectItem>
-              <SelectItem value={CashMovementType.OUT}>Egreso</SelectItem>
+              <SelectItem value="IN">Ingreso</SelectItem>
+              <SelectItem value="OUT">Egreso</SelectItem>
             </SelectContent>
           </Select>
           <Select value={methodFilter} onValueChange={setMethodFilter}>
@@ -158,9 +173,9 @@ export default function CashPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Todos los métodos</SelectItem>
-              <SelectItem value={PaymentMethod.CASH}>Efectivo</SelectItem>
-              <SelectItem value={PaymentMethod.CARD}>Tarjeta</SelectItem>
-              <SelectItem value={PaymentMethod.TRANSFER}>Transferencia</SelectItem>
+              <SelectItem value="CASH">Efectivo</SelectItem>
+              <SelectItem value="CARD">Tarjeta</SelectItem>
+              <SelectItem value="TRANSFER">Transferencia</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -205,9 +220,9 @@ export default function CashPage() {
                     <TableCell>
                       <span className={cn(
                         "inline-flex items-center gap-1",
-                        movement.type === CashMovementType.IN ? "text-success" : "text-destructive"
+                        movement.type === "IN" ? "text-success" : "text-destructive"
                       )}>
-                        {movement.type === CashMovementType.IN ? (
+                        {movement.type === "IN" ? (
                           <ArrowUpCircle className="h-4 w-4" />
                         ) : (
                           <ArrowDownCircle className="h-4 w-4" />
@@ -215,13 +230,13 @@ export default function CashPage() {
                         {cashMovementTypeLabels[movement.type]}
                       </span>
                     </TableCell>
-                    <TableCell>{formatPaymentMethod(movement.paymentMethod)}</TableCell>
+                    <TableCell>{formatPaymentMethod(movement.method)}</TableCell>
                     <TableCell>{movement.description || "-"}</TableCell>
                     <TableCell className={cn(
                       "text-right font-medium",
-                      movement.type === CashMovementType.IN ? "text-success" : "text-destructive"
+                      movement.type === "IN" ? "text-success" : "text-destructive"
                     )}>
-                      {movement.type === CashMovementType.IN ? "+" : "-"}
+                      {movement.type === "IN" ? "+" : "-"}
                       {formatCurrency(movement.amount)}
                     </TableCell>
                   </TableRow>

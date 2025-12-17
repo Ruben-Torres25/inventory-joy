@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Eye, FileText, X } from "lucide-react";
 import { salesApi, clientsApi } from "@/lib/api";
-import { Sale, SaleStatus } from "@/types";
+import { Sale } from "@/types";
 import { formatCurrency, formatDateTime, formatPaymentMethod } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,7 +54,7 @@ export default function SalesPage() {
       salesApi.getAll({
         from: dateRange.from ? formatDateForApi(dateRange.from) : undefined,
         to: dateRange.to ? formatDateForApi(dateRange.to) : undefined,
-        customerId: customerId ? Number(customerId) : undefined,
+        customerId: customerId || undefined,
         page,
         limit,
       }),
@@ -77,11 +77,11 @@ export default function SalesPage() {
     salesApi.export({
       from: dateRange.from ? formatDateForApi(dateRange.from) : undefined,
       to: dateRange.to ? formatDateForApi(dateRange.to) : undefined,
-      customerId: customerId ? Number(customerId) : undefined,
+      customerId: customerId || undefined,
     });
   };
 
-  const handleExportPdf = (saleId: number) => {
+  const handleExportPdf = (saleId: string) => {
     salesApi.exportPdf(saleId);
   };
 
@@ -95,7 +95,7 @@ export default function SalesPage() {
           <DateRangePicker
             from={dateRange.from}
             to={dateRange.to}
-            onSelect={(range) => setDateRange(range || {})}
+            onChange={(range) => setDateRange(range || {})}
           />
           <Select value={customerId} onValueChange={setCustomerId}>
             <SelectTrigger className="w-[200px]">
@@ -104,7 +104,7 @@ export default function SalesPage() {
             <SelectContent>
               <SelectItem value="">Todos los clientes</SelectItem>
               {clientsData?.items.map((client) => (
-                <SelectItem key={client.id} value={String(client.id)}>
+                <SelectItem key={client.id} value={client.id}>
                   {client.name}
                 </SelectItem>
               ))}
@@ -155,7 +155,7 @@ export default function SalesPage() {
                     </TableCell>
                     <TableCell>{formatPaymentMethod(sale.paymentMethod)}</TableCell>
                     <TableCell>
-                      <StatusBadge type="sale" value={sale.status} />
+                      <StatusBadge status={sale.status === "CONFIRMED" ? "confirmed" : "canceled"} />
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
@@ -172,7 +172,7 @@ export default function SalesPage() {
                       >
                         <FileText className="h-4 w-4" />
                       </Button>
-                      {sale.status === SaleStatus.CONFIRMED && (
+                      {sale.status === "CONFIRMED" && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -222,9 +222,10 @@ export default function SalesPage() {
         onOpenChange={(open) => !open && setCancelingSale(null)}
         title="Cancelar venta"
         description="¿Estás seguro de cancelar esta venta? Se revertirá el stock de los productos."
-        confirmText="Cancelar venta"
+        confirmLabel="Cancelar venta"
         onConfirm={() => cancelingSale && cancelMutation.mutate(cancelingSale.id)}
-        isLoading={cancelMutation.isPending}
+        loading={cancelMutation.isPending}
+        variant="destructive"
       />
     </div>
   );

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { clientsApi } from "@/lib/api";
-import { Client, CreateClientDto } from "@/types";
+import { Client, CreateClientDto, UpdateClientDto } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -27,12 +27,14 @@ import { toast } from "sonner";
 export default function ClientsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [activeFilter, setActiveFilter] = useState<boolean | undefined>(true);
+  const [statusFilter, setStatusFilter] = useState<string>("active");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [formOpen, setFormOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deactivatingClient, setDeactivatingClient] = useState<Client | null>(null);
+
+  const activeFilter = statusFilter === "all" ? undefined : statusFilter === "active";
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["clients", { search, active: activeFilter, page, limit }],
@@ -52,7 +54,7 @@ export default function ClientsPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: CreateClientDto }) =>
+    mutationFn: ({ id, data }: { id: string; data: UpdateClientDto }) =>
       clientsApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
@@ -65,7 +67,7 @@ export default function ClientsPage() {
   });
 
   const deactivateMutation = useMutation({
-    mutationFn: clientsApi.deactivate,
+    mutationFn: (id: string) => clientsApi.update(id, { isActive: false }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       toast.success("Cliente desactivado correctamente");
@@ -92,7 +94,7 @@ export default function ClientsPage() {
             onChange={setSearch}
             placeholder="Buscar por nombre, documento..."
           />
-          <StatusFilter value={activeFilter} onChange={setActiveFilter} />
+          <StatusFilter value={statusFilter} onChange={setStatusFilter} />
         </div>
         <div className="flex items-center gap-2">
           <ExportButton onClick={handleExport} />
@@ -132,11 +134,11 @@ export default function ClientsPage() {
                 {data?.items.map((client) => (
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">{client.name}</TableCell>
-                    <TableCell>{client.documentId || "-"}</TableCell>
+                    <TableCell>{client.document || "-"}</TableCell>
                     <TableCell>{client.phone || "-"}</TableCell>
                     <TableCell>{client.email || "-"}</TableCell>
                     <TableCell>
-                      <StatusBadge type="active" value={client.active} />
+                      <StatusBadge status={client.isActive ? "active" : "inactive"} />
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
@@ -146,7 +148,7 @@ export default function ClientsPage() {
                       >
                         Editar
                       </Button>
-                      {client.active && (
+                      {client.isActive && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -200,7 +202,8 @@ export default function ClientsPage() {
         onConfirm={() =>
           deactivatingClient && deactivateMutation.mutate(deactivatingClient.id)
         }
-        isLoading={deactivateMutation.isPending}
+        loading={deactivateMutation.isPending}
+        variant="destructive"
       />
     </div>
   );

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { TrendingUp, Package, AlertTriangle } from "lucide-react";
-import { reportsApi, productsApi } from "@/lib/api";
+import { reportsApi } from "@/lib/api";
 import { formatCurrency, formatDate, formatPaymentMethod, formatDateForApi } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  LineChart,
+  Line,
   BarChart,
   Bar,
   XAxis,
@@ -21,8 +23,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
 } from "recharts";
 import { DateRangePicker } from "@/components/shared/DateRangePicker";
 import { ExportButton } from "@/components/shared/ExportButton";
@@ -56,24 +56,29 @@ export default function ReportsPage() {
   });
 
   const { data: lowStock, isLoading: lowStockLoading } = useQuery({
-    queryKey: ["products-low-stock"],
-    queryFn: () => productsApi.getLowStock(),
+    queryKey: ["reports-low-stock"],
+    queryFn: () => reportsApi.getLowStock(),
   });
 
   const handleExportSales = () => {
-    reportsApi.exportSales(queryParams);
+    reportsApi.exportSalesSummary(queryParams);
   };
 
   const handleExportTopProducts = () => {
-    reportsApi.exportTopProducts({ ...queryParams, limit: topLimit });
+    reportsApi.exportTopProducts({ ...queryParams, limit: String(topLimit) });
   };
 
   const handleExportLowStock = () => {
-    productsApi.exportLowStock();
+    reportsApi.exportLowStock();
   };
 
   if (salesLoading || topLoading || lowStockLoading) return <LoadingState />;
   if (salesError) return <ErrorState message={salesError.message} />;
+
+  // Calculate totals from the days array
+  const totalSales = salesSummary?.totals.total || 0;
+  const salesCount = salesSummary?.totals.count || 0;
+  const averageTicket = salesCount > 0 ? totalSales / salesCount : 0;
 
   return (
     <div className="space-y-6">
@@ -99,7 +104,7 @@ export default function ReportsPage() {
             <DateRangePicker
               from={dateRange.from}
               to={dateRange.to}
-              onSelect={(range) => setDateRange(range || {})}
+              onChange={(range) => setDateRange(range || {})}
             />
             <ExportButton onClick={handleExportSales} />
           </div>
@@ -113,9 +118,9 @@ export default function ReportsPage() {
                     <CardTitle className="text-sm font-medium">Total Ventas</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(salesSummary.totalSales)}</div>
+                    <div className="text-2xl font-bold">{formatCurrency(totalSales)}</div>
                     <p className="text-sm text-muted-foreground">
-                      {salesSummary.salesCount} ventas en el período
+                      {salesCount} ventas en el período
                     </p>
                   </CardContent>
                 </Card>
@@ -124,7 +129,7 @@ export default function ReportsPage() {
                     <CardTitle className="text-sm font-medium">Ticket Promedio</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(salesSummary.averageTicket)}</div>
+                    <div className="text-2xl font-bold">{formatCurrency(averageTicket)}</div>
                   </CardContent>
                 </Card>
                 <Card>
@@ -132,18 +137,28 @@ export default function ReportsPage() {
                     <CardTitle className="text-sm font-medium">Por Método</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1">
-                    {Object.entries(salesSummary.byPaymentMethod).map(([method, amount]) => (
-                      <div key={method} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{formatPaymentMethod(method)}:</span>
-                        <span className="font-medium">{formatCurrency(amount)}</span>
-                      </div>
-                    ))}
+                    {salesSummary.totals.byMethod && (
+                      <>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Efectivo:</span>
+                          <span className="font-medium">{formatCurrency(salesSummary.totals.byMethod.CASH)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Tarjeta:</span>
+                          <span className="font-medium">{formatCurrency(salesSummary.totals.byMethod.CARD)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Transferencia:</span>
+                          <span className="font-medium">{formatCurrency(salesSummary.totals.byMethod.TRANSFER)}</span>
+                        </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               </div>
 
               {/* Sales chart */}
-              {salesSummary.dailySales.length > 0 ? (
+              {salesSummary.days.length > 0 ? (
                 <Card>
                   <CardHeader>
                     <CardTitle>Ventas por día</CardTitle>
@@ -151,7 +166,7 @@ export default function ReportsPage() {
                   <CardContent>
                     <div className="h-[300px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={salesSummary.dailySales}>
+                        <LineChart data={salesSummary.days}>
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis
                             dataKey="date"
@@ -188,7 +203,7 @@ export default function ReportsPage() {
               <DateRangePicker
                 from={dateRange.from}
                 to={dateRange.to}
-                onSelect={(range) => setDateRange(range || {})}
+                onChange={(range) => setDateRange(range || {})}
               />
               <div className="flex items-center gap-2">
                 <Label>Top</Label>
@@ -218,7 +233,7 @@ export default function ReportsPage() {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis type="number" />
                         <YAxis
-                          dataKey="productName"
+                          dataKey="product.name"
                           type="category"
                           width={150}
                           tick={{ fontSize: 12 }}
@@ -247,12 +262,12 @@ export default function ReportsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {topProducts.map((product, index) => (
-                      <TableRow key={product.productId}>
+                    {topProducts.map((item, index) => (
+                      <TableRow key={item.productId}>
                         <TableCell>{index + 1}</TableCell>
-                        <TableCell className="font-medium">{product.productName}</TableCell>
-                        <TableCell className="text-right">{product.totalQuantity}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(product.totalRevenue)}</TableCell>
+                        <TableCell className="font-medium">{item.product.name}</TableCell>
+                        <TableCell className="text-right">{item.totalQuantity}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.totalRevenue)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -307,7 +322,7 @@ export default function ReportsPage() {
             <EmptyState
               title="Todo en orden"
               description="No hay productos con stock bajo"
-              icon={<Package className="h-12 w-12 text-success" />}
+              icon={Package}
             />
           )}
         </TabsContent>

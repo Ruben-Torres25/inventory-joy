@@ -32,7 +32,7 @@ export function PurchaseDetailDialog({ purchase, open, onOpenChange }: PurchaseD
             </div>
             <div>
               <span className="text-muted-foreground">Estado:</span>
-              <p><StatusBadge type="purchase" value={purchase.status} /></p>
+              <p><StatusBadge status={purchase.status === "CONFIRMED" ? "confirmed" : "canceled"} /></p>
             </div>
             <div>
               <span className="text-muted-foreground">Proveedor:</span>

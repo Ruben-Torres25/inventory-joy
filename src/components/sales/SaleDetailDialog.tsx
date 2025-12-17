@@ -32,7 +32,7 @@ export function SaleDetailDialog({ sale, open, onOpenChange }: SaleDetailDialogP
             </div>
             <div>
               <span className="text-muted-foreground">Estado:</span>
-              <p><StatusBadge type="sale" value={sale.status} /></p>
+              <p><StatusBadge status={sale.status === "CONFIRMED" ? "confirmed" : "canceled"} /></p>
             </div>
             <div>
               <span className="text-muted-foreground">Cliente:</span>
