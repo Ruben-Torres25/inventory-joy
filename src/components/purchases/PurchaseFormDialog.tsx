@@ -73,7 +73,7 @@ export function PurchaseFormDialog({ open, onOpenChange, onSuccess }: PurchaseFo
       toast.error("Selecciona un producto e ingresa el costo unitario");
       return;
     }
-    const product = productsData?.items.find((p) => p.id === Number(selectedProductId));
+    const product = productsData?.items.find((p) => p.id === selectedProductId);
     if (!product) return;
 
     const qty = Number(quantity) || 1;
@@ -120,7 +120,7 @@ export function PurchaseFormDialog({ open, onOpenChange, onSuccess }: PurchaseFo
 
     const purchaseData: CreatePurchaseDto = {
       items: items.map(({ productId, quantity, unitCost }) => ({ productId, quantity, unitCost })),
-      ...(supplierId && { supplierId: Number(supplierId) }),
+      ...(supplierId && { supplierId }),
       ...(notes && { notes }),
     };
 
@@ -145,7 +145,7 @@ export function PurchaseFormDialog({ open, onOpenChange, onSuccess }: PurchaseFo
                 </SelectTrigger>
                 <SelectContent>
                   {productsData?.items.map((product) => (
-                    <SelectItem key={product.id} value={String(product.id)}>
+                    <SelectItem key={product.id} value={product.id}>
                       {product.sku} - {product.name}
                     </SelectItem>
                   ))}
@@ -245,7 +245,7 @@ export function PurchaseFormDialog({ open, onOpenChange, onSuccess }: PurchaseFo
               <SelectContent>
                 <SelectItem value="">Sin proveedor</SelectItem>
                 {suppliersData?.items.map((supplier) => (
-                  <SelectItem key={supplier.id} value={String(supplier.id)}>
+                  <SelectItem key={supplier.id} value={supplier.id}>
                     {supplier.name}
                   </SelectItem>
                 ))}

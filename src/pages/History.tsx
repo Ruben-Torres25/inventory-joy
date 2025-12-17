@@ -60,9 +60,9 @@ export default function HistoryPage() {
     queryKey: ["audit-logs", { search, entityType, action, dateRange, page, limit }],
     queryFn: () =>
       auditApi.getAll({
-        search,
-        entityType: entityType as AuditEntityType | undefined,
-        action: action as AuditAction | undefined,
+        q: search || undefined,
+        entityType: (entityType || undefined) as AuditEntityType | undefined,
+        action: (action || undefined) as AuditAction | undefined,
         from: dateRange.from ? formatDateForApi(dateRange.from) : undefined,
         to: dateRange.to ? formatDateForApi(dateRange.to) : undefined,
         page,
@@ -84,7 +84,7 @@ export default function HistoryPage() {
         <DateRangePicker
           from={dateRange.from}
           to={dateRange.to}
-          onSelect={(range) => setDateRange(range || {})}
+          onChange={(range) => setDateRange(range || {})}
         />
         <Select value={entityType} onValueChange={setEntityType}>
           <SelectTrigger className="w-[150px]">
@@ -129,7 +129,6 @@ export default function HistoryPage() {
                   <TableHead>Entidad</TableHead>
                   <TableHead>Acción</TableHead>
                   <TableHead>Resumen</TableHead>
-                  <TableHead>Usuario</TableHead>
                   <TableHead className="text-right">Detalle</TableHead>
                 </TableRow>
               </TableHeader>
@@ -152,7 +151,6 @@ export default function HistoryPage() {
                     <TableCell className="max-w-[300px] truncate">
                       {log.summary || "-"}
                     </TableCell>
-                    <TableCell>{log.userName || "Sistema"}</TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="ghost"
@@ -194,10 +192,6 @@ export default function HistoryPage() {
                   <p className="font-medium">{formatDateTime(viewingLog.createdAt)}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Usuario:</span>
-                  <p className="font-medium">{viewingLog.userName || "Sistema"}</p>
-                </div>
-                <div>
                   <span className="text-muted-foreground">Entidad:</span>
                   <p>
                     <Badge variant="outline">
@@ -213,7 +207,7 @@ export default function HistoryPage() {
                     </Badge>
                   </p>
                 </div>
-                <div className="col-span-2">
+                <div>
                   <span className="text-muted-foreground">ID de entidad:</span>
                   <p className="font-mono">{viewingLog.entityId}</p>
                 </div>

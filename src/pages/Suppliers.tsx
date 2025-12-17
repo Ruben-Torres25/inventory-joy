@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { suppliersApi } from "@/lib/api";
-import { Supplier, CreateSupplierDto } from "@/types";
+import { Supplier, UpdateSupplierDto } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -27,12 +27,14 @@ import { toast } from "sonner";
 export default function SuppliersPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [activeFilter, setActiveFilter] = useState<boolean | undefined>(true);
+  const [statusFilter, setStatusFilter] = useState<string>("active");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [formOpen, setFormOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [deactivatingSupplier, setDeactivatingSupplier] = useState<Supplier | null>(null);
+
+  const activeFilter = statusFilter === "all" ? undefined : statusFilter === "active";
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["suppliers", { search, active: activeFilter, page, limit }],
@@ -52,7 +54,7 @@ export default function SuppliersPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: CreateSupplierDto }) =>
+    mutationFn: ({ id, data }: { id: string; data: UpdateSupplierDto }) =>
       suppliersApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suppliers"] });
@@ -65,7 +67,7 @@ export default function SuppliersPage() {
   });
 
   const deactivateMutation = useMutation({
-    mutationFn: suppliersApi.deactivate,
+    mutationFn: (id: string) => suppliersApi.update(id, { isActive: false }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suppliers"] });
       toast.success("Proveedor desactivado correctamente");
@@ -92,7 +94,7 @@ export default function SuppliersPage() {
             onChange={setSearch}
             placeholder="Buscar por nombre, documento..."
           />
-          <StatusFilter value={activeFilter} onChange={setActiveFilter} />
+          <StatusFilter value={statusFilter} onChange={setStatusFilter} />
         </div>
         <div className="flex items-center gap-2">
           <ExportButton onClick={handleExport} />
@@ -132,11 +134,11 @@ export default function SuppliersPage() {
                 {data?.items.map((supplier) => (
                   <TableRow key={supplier.id}>
                     <TableCell className="font-medium">{supplier.name}</TableCell>
-                    <TableCell>{supplier.documentId || "-"}</TableCell>
+                    <TableCell>{supplier.document || "-"}</TableCell>
                     <TableCell>{supplier.phone || "-"}</TableCell>
                     <TableCell>{supplier.email || "-"}</TableCell>
                     <TableCell>
-                      <StatusBadge type="active" value={supplier.active} />
+                      <StatusBadge status={supplier.isActive ? "active" : "inactive"} />
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
@@ -146,7 +148,7 @@ export default function SuppliersPage() {
                       >
                         Editar
                       </Button>
-                      {supplier.active && (
+                      {supplier.isActive && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -200,7 +202,8 @@ export default function SuppliersPage() {
         onConfirm={() =>
           deactivatingSupplier && deactivateMutation.mutate(deactivatingSupplier.id)
         }
-        isLoading={deactivateMutation.isPending}
+        loading={deactivateMutation.isPending}
+        variant="destructive"
       />
     </div>
   );

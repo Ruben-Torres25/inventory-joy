@@ -32,7 +32,7 @@ interface SaleFormDialogProps {
 export function SaleFormDialog({ open, onOpenChange, onSuccess }: SaleFormDialogProps) {
   const [items, setItems] = useState<(CreateSaleItemDto & { product: Product })[]>([]);
   const [customerId, setCustomerId] = useState<string>("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
   const [discountPercent, setDiscountPercent] = useState<string>("0");
   const [notes, setNotes] = useState("");
   const [selectedProductId, setSelectedProductId] = useState<string>("");
@@ -63,7 +63,7 @@ export function SaleFormDialog({ open, onOpenChange, onSuccess }: SaleFormDialog
   const resetForm = () => {
     setItems([]);
     setCustomerId("");
-    setPaymentMethod(PaymentMethod.CASH);
+    setPaymentMethod("CASH");
     setDiscountPercent("0");
     setNotes("");
     setSelectedProductId("");
@@ -72,7 +72,7 @@ export function SaleFormDialog({ open, onOpenChange, onSuccess }: SaleFormDialog
 
   const handleAddItem = () => {
     if (!selectedProductId) return;
-    const product = productsData?.items.find((p) => p.id === Number(selectedProductId));
+    const product = productsData?.items.find((p) => p.id === selectedProductId);
     if (!product) return;
 
     const qty = Number(quantity) || 1;
@@ -128,7 +128,7 @@ export function SaleFormDialog({ open, onOpenChange, onSuccess }: SaleFormDialog
     const saleData: CreateSaleDto = {
       items: items.map(({ productId, quantity }) => ({ productId, quantity })),
       paymentMethod,
-      ...(customerId && { customerId: Number(customerId) }),
+      ...(customerId && { customerId }),
       ...(Number(discountPercent) > 0 && { discountPercent: Number(discountPercent) }),
       ...(notes && { notes }),
     };
@@ -156,7 +156,7 @@ export function SaleFormDialog({ open, onOpenChange, onSuccess }: SaleFormDialog
                   {productsData?.items
                     .filter((p) => p.stock > 0)
                     .map((product) => (
-                      <SelectItem key={product.id} value={String(product.id)}>
+                      <SelectItem key={product.id} value={product.id}>
                         {product.sku} - {product.name} ({formatCurrency(product.price)}) - Stock: {product.stock}
                       </SelectItem>
                     ))}
@@ -237,7 +237,7 @@ export function SaleFormDialog({ open, onOpenChange, onSuccess }: SaleFormDialog
                 <SelectContent>
                   <SelectItem value="">Sin cliente</SelectItem>
                   {clientsData?.items.map((client) => (
-                    <SelectItem key={client.id} value={String(client.id)}>
+                    <SelectItem key={client.id} value={client.id}>
                       {client.name}
                     </SelectItem>
                   ))}
@@ -251,9 +251,9 @@ export function SaleFormDialog({ open, onOpenChange, onSuccess }: SaleFormDialog
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={PaymentMethod.CASH}>Efectivo</SelectItem>
-                  <SelectItem value={PaymentMethod.CARD}>Tarjeta</SelectItem>
-                  <SelectItem value={PaymentMethod.TRANSFER}>Transferencia</SelectItem>
+                  <SelectItem value="CASH">Efectivo</SelectItem>
+                  <SelectItem value="CARD">Tarjeta</SelectItem>
+                  <SelectItem value="TRANSFER">Transferencia</SelectItem>
                 </SelectContent>
               </Select>
             </div>
