@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -57,9 +58,19 @@ export function CashMovementFormDialog({
     },
   });
 
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        type: "IN",
+        amount: 0,
+        method: "CASH",
+        description: "",
+      });
+    }
+  }, [open, form]);
+
   const handleSubmit = (data: CreateCashMovementDto) => {
     onSubmit(data);
-    form.reset();
   };
 
   return (
@@ -76,7 +87,7 @@ export function CashMovementFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tipo *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />
@@ -110,7 +121,7 @@ export function CashMovementFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Método de pago *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />

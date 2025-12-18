@@ -60,26 +60,28 @@ export function SupplierFormDialog({
   });
 
   useEffect(() => {
-    if (supplier) {
-      form.reset({
-        name: supplier.name,
-        document: supplier.document || "",
-        phone: supplier.phone || "",
-        email: supplier.email || "",
-        address: supplier.address || "",
-        notes: supplier.notes || "",
-      });
-    } else {
-      form.reset({
-        name: "",
-        document: "",
-        phone: "",
-        email: "",
-        address: "",
-        notes: "",
-      });
+    if (open) {
+      if (supplier) {
+        form.reset({
+          name: supplier.name,
+          document: supplier.document || "",
+          phone: supplier.phone || "",
+          email: supplier.email || "",
+          address: supplier.address || "",
+          notes: supplier.notes || "",
+        });
+      } else {
+        form.reset({
+          name: "",
+          document: "",
+          phone: "",
+          email: "",
+          address: "",
+          notes: "",
+        });
+      }
     }
-  }, [supplier, form]);
+  }, [open, supplier, form]);
 
   const handleSubmit = (data: FormData) => {
     const cleanData: CreateSupplierDto = {
