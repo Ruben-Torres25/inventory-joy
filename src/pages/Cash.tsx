@@ -28,6 +28,8 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { ExportButton } from "@/components/shared/ExportButton";
 import { CashMovementFormDialog } from "@/components/cash/CashMovementFormDialog";
+import { SortableTableHead } from "@/components/shared/SortableTableHead";
+import { useSorting } from "@/hooks/use-sorting";
 import { toast } from "sonner";
 import { formatDateForApi } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -40,6 +42,8 @@ export default function CashPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [formOpen, setFormOpen] = useState(false);
+
+  const { sortBy, sortOrder, handleSort } = useSorting("createdAt", "desc");
 
   const queryParams = {
     from: dateRange.from ? formatDateForApi(dateRange.from) : undefined,
@@ -54,8 +58,14 @@ export default function CashPage() {
   });
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["cash-movements", { ...queryParams, page, limit }],
-    queryFn: () => cashApi.getMovements({ ...queryParams, page, limit }),
+    queryKey: ["cash-movements", { ...queryParams, page, limit, sortBy, sortOrder }],
+    queryFn: () => cashApi.getMovements({
+      ...queryParams,
+      page,
+      limit,
+      sortBy: sortBy || undefined,
+      sortOrder: sortOrder || undefined,
+    }),
   });
 
   const createMutation = useMutation({
@@ -206,11 +216,11 @@ export default function CashPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Método</TableHead>
-                  <TableHead>Descripción</TableHead>
-                  <TableHead className="text-right">Monto</TableHead>
+                  <SortableTableHead field="createdAt" label="Fecha" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="type" label="Tipo" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="method" label="Método" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="description" label="Descripción" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="amount" label="Monto" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} className="text-right" />
                 </TableRow>
               </TableHeader>
               <TableBody>

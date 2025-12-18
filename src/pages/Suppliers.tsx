@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { suppliersApi } from "@/lib/api";
 import { Supplier, UpdateSupplierDto } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ import { ErrorState } from "@/components/shared/ErrorState";
 import { ExportButton } from "@/components/shared/ExportButton";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { SupplierFormDialog } from "@/components/suppliers/SupplierFormDialog";
+import { SortableTableHead } from "@/components/shared/SortableTableHead";
+import { useSorting } from "@/hooks/use-sorting";
 import { toast } from "sonner";
 
 export default function SuppliersPage() {
@@ -34,11 +36,20 @@ export default function SuppliersPage() {
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [deactivatingSupplier, setDeactivatingSupplier] = useState<Supplier | null>(null);
 
+  const { sortBy, sortOrder, handleSort } = useSorting();
+
   const activeFilter = statusFilter === "all" ? undefined : statusFilter === "active";
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["suppliers", { search, active: activeFilter, page, limit }],
-    queryFn: () => suppliersApi.getAll({ search, active: activeFilter, page, limit }),
+    queryKey: ["suppliers", { search, active: activeFilter, page, limit, sortBy, sortOrder }],
+    queryFn: () => suppliersApi.getAll({
+      search,
+      active: activeFilter,
+      page,
+      limit,
+      sortBy: sortBy || undefined,
+      sortOrder: sortOrder || undefined,
+    }),
   });
 
   const createMutation = useMutation({
@@ -122,11 +133,11 @@ export default function SuppliersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Documento</TableHead>
-                  <TableHead>Teléfono</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Estado</TableHead>
+                  <SortableTableHead field="name" label="Nombre" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="document" label="Documento" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="phone" label="Teléfono" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="email" label="Email" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="isActive" label="Estado" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -143,19 +154,21 @@ export default function SuppliersPage() {
                     <TableCell className="text-right">
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         onClick={() => setEditingSupplier(supplier)}
+                        aria-label="Editar"
                       >
-                        Editar
+                        <Pencil className="h-4 w-4" />
                       </Button>
                       {supplier.isActive && (
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           className="text-destructive"
                           onClick={() => setDeactivatingSupplier(supplier)}
+                          aria-label="Desactivar"
                         >
-                          Desactivar
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
                     </TableCell>

@@ -38,6 +38,8 @@ import { DataTablePagination } from "@/components/shared/DataTablePagination";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorState } from "@/components/shared/ErrorState";
+import { SortableTableHead } from "@/components/shared/SortableTableHead";
+import { useSorting } from "@/hooks/use-sorting";
 
 const actionColors: Record<AuditAction, string> = {
   [AuditAction.CREATE]: "bg-success/10 text-success",
@@ -56,8 +58,10 @@ export default function HistoryPage() {
   const [limit, setLimit] = useState(20);
   const [viewingLog, setViewingLog] = useState<AuditLog | null>(null);
 
+  const { sortBy, sortOrder, handleSort } = useSorting("createdAt", "desc");
+
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["audit-logs", { search, entityType, action, dateRange, page, limit }],
+    queryKey: ["audit-logs", { search, entityType, action, dateRange, page, limit, sortBy, sortOrder }],
     queryFn: () =>
       auditApi.getAll({
         q: search || undefined,
@@ -67,6 +71,8 @@ export default function HistoryPage() {
         to: dateRange.to ? formatDateForApi(dateRange.to) : undefined,
         page,
         limit,
+        sortBy: sortBy || undefined,
+        sortOrder: sortOrder || undefined,
       }),
   });
 
@@ -125,10 +131,10 @@ export default function HistoryPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Entidad</TableHead>
-                  <TableHead>Acción</TableHead>
-                  <TableHead>Resumen</TableHead>
+                  <SortableTableHead field="createdAt" label="Fecha" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="entityType" label="Entidad" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="action" label="Acción" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="summary" label="Resumen" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
                   <TableHead className="text-right">Detalle</TableHead>
                 </TableRow>
               </TableHeader>
@@ -156,6 +162,7 @@ export default function HistoryPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => setViewingLog(log)}
+                        aria-label="Ver detalle"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>

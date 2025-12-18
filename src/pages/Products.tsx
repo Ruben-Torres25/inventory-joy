@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye } from "lucide-react";
 import { productsApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,13 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { TableLoadingState } from "@/components/shared/LoadingState";
+import { SortableTableHead } from "@/components/shared/SortableTableHead";
 import { ProductFormDialog } from "@/components/products/ProductFormDialog";
+import { ProductDetailDialog } from "@/components/products/ProductDetailDialog";
+import { ProductAdvancedFilters, defaultProductFilters } from "@/components/products/ProductAdvancedFilters";
+import type { ProductFilters } from "@/components/products/ProductAdvancedFilters";
 import type { Product } from "@/types";
+import { useSorting } from "@/hooks/use-sorting";
 import { toast } from "sonner";
 
 export default function ProductsPage() {
@@ -35,12 +40,29 @@ export default function ProductsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
+  const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
+  const [advancedFilters, setAdvancedFilters] = useState<ProductFilters>(defaultProductFilters);
+  
+  const { sortBy, sortOrder, handleSort } = useSorting();
 
   const activeParam = statusFilter === "all" ? undefined : statusFilter === "active";
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["products", search, statusFilter, page, limit],
-    queryFn: () => productsApi.getAll({ search, active: activeParam, page, limit }),
+    queryKey: ["products", search, statusFilter, page, limit, sortBy, sortOrder, advancedFilters],
+    queryFn: () => productsApi.getAll({
+      search,
+      active: activeParam,
+      page,
+      limit,
+      sortBy: sortBy || undefined,
+      sortOrder: sortOrder || undefined,
+      priceMin: advancedFilters.priceMin,
+      priceMax: advancedFilters.priceMax,
+      stockMin: advancedFilters.stockMin,
+      stockMax: advancedFilters.stockMax,
+      lowStockOnly: advancedFilters.lowStockOnly || undefined,
+      zeroStockOnly: advancedFilters.zeroStockOnly || undefined,
+    }),
   });
 
   const deleteMutation = useMutation({
@@ -72,9 +94,10 @@ export default function ProductsPage() {
   return (
     <div className="space-y-4 animate-fade-up">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 gap-3">
+        <div className="flex flex-1 gap-3 flex-wrap">
           <SearchInput value={search} onChange={setSearch} placeholder="Buscar productos..." />
           <StatusFilter value={statusFilter} onChange={setStatusFilter} />
+          <ProductAdvancedFilters filters={advancedFilters} onChange={setAdvancedFilters} />
         </div>
         <div className="flex gap-2">
           <ExportButton onClick={handleExport} />
@@ -98,12 +121,12 @@ export default function ProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead className="text-right">Precio</TableHead>
-                  <TableHead className="text-right">Stock</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="w-[100px]">Acciones</TableHead>
+                  <SortableTableHead field="sku" label="SKU" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="name" label="Nombre" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="price" label="Precio" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} className="text-right" />
+                  <SortableTableHead field="stock" label="Stock" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} className="text-right" />
+                  <SortableTableHead field="isActive" label="Estado" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <TableHead className="w-[120px]">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -127,10 +150,13 @@ export default function ProductsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(product)}>
+                        <Button variant="ghost" size="icon" onClick={() => setViewingProduct(product)} aria-label="Ver detalles">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(product)} aria-label="Editar">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteProduct(product)} disabled={!product.isActive}>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteProduct(product)} disabled={!product.isActive} aria-label="Desactivar">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -153,6 +179,13 @@ export default function ProductsPage() {
       </Card>
 
       <ProductFormDialog open={formOpen} onOpenChange={handleFormClose} product={editingProduct} />
+
+      <ProductDetailDialog
+        product={viewingProduct}
+        open={!!viewingProduct}
+        onOpenChange={(open) => !open && setViewingProduct(null)}
+        onEdit={handleEdit}
+      />
 
       <ConfirmDialog
         open={!!deleteProduct}
