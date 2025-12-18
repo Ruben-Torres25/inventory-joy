@@ -30,6 +30,8 @@ import { ExportButton } from "@/components/shared/ExportButton";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { SaleFormDialog } from "@/components/sales/SaleFormDialog";
 import { SaleDetailDialog } from "@/components/sales/SaleDetailDialog";
+import { SortableTableHead } from "@/components/shared/SortableTableHead";
+import { useSorting } from "@/hooks/use-sorting";
 import { toast } from "sonner";
 import { formatDateForApi } from "@/lib/format";
 
@@ -43,13 +45,15 @@ export default function SalesPage() {
   const [viewingSale, setViewingSale] = useState<Sale | null>(null);
   const [cancelingSale, setCancelingSale] = useState<Sale | null>(null);
 
+  const { sortBy, sortOrder, handleSort } = useSorting("createdAt", "desc");
+
   const { data: clientsData } = useQuery({
     queryKey: ["clients", { active: true, limit: 100 }],
     queryFn: () => clientsApi.getAll({ active: true, limit: 100 }),
   });
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["sales", { from: dateRange.from, to: dateRange.to, customerId, page, limit }],
+    queryKey: ["sales", { from: dateRange.from, to: dateRange.to, customerId, page, limit, sortBy, sortOrder }],
     queryFn: () =>
       salesApi.getAll({
         from: dateRange.from ? formatDateForApi(dateRange.from) : undefined,
@@ -57,6 +61,8 @@ export default function SalesPage() {
         customerId: customerId || undefined,
         page,
         limit,
+        sortBy: sortBy || undefined,
+        sortOrder: sortOrder || undefined,
       }),
   });
 
@@ -137,11 +143,11 @@ export default function SalesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead>Método de pago</TableHead>
-                  <TableHead>Estado</TableHead>
+                  <SortableTableHead field="createdAt" label="Fecha" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="customer" label="Cliente" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="total" label="Total" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} className="text-right" />
+                  <SortableTableHead field="paymentMethod" label="Método de pago" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="status" label="Estado" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -162,6 +168,7 @@ export default function SalesPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => setViewingSale(sale)}
+                        aria-label="Ver detalles"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -169,6 +176,7 @@ export default function SalesPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleExportPdf(sale.id)}
+                        aria-label="Exportar PDF"
                       >
                         <FileText className="h-4 w-4" />
                       </Button>
@@ -178,6 +186,7 @@ export default function SalesPage() {
                           size="icon"
                           className="text-destructive"
                           onClick={() => setCancelingSale(sale)}
+                          aria-label="Cancelar venta"
                         >
                           <X className="h-4 w-4" />
                         </Button>

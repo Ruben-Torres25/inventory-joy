@@ -30,6 +30,8 @@ import { ExportButton } from "@/components/shared/ExportButton";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { PurchaseFormDialog } from "@/components/purchases/PurchaseFormDialog";
 import { PurchaseDetailDialog } from "@/components/purchases/PurchaseDetailDialog";
+import { SortableTableHead } from "@/components/shared/SortableTableHead";
+import { useSorting } from "@/hooks/use-sorting";
 import { toast } from "sonner";
 import { formatDateForApi } from "@/lib/format";
 
@@ -43,13 +45,15 @@ export default function PurchasesPage() {
   const [viewingPurchase, setViewingPurchase] = useState<Purchase | null>(null);
   const [cancelingPurchase, setCancelingPurchase] = useState<Purchase | null>(null);
 
+  const { sortBy, sortOrder, handleSort } = useSorting("createdAt", "desc");
+
   const { data: suppliersData } = useQuery({
     queryKey: ["suppliers", { active: true, limit: 100 }],
     queryFn: () => suppliersApi.getAll({ active: true, limit: 100 }),
   });
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["purchases", { from: dateRange.from, to: dateRange.to, supplierId, page, limit }],
+    queryKey: ["purchases", { from: dateRange.from, to: dateRange.to, supplierId, page, limit, sortBy, sortOrder }],
     queryFn: () =>
       purchasesApi.getAll({
         from: dateRange.from ? formatDateForApi(dateRange.from) : undefined,
@@ -57,6 +61,8 @@ export default function PurchasesPage() {
         supplierId: supplierId || undefined,
         page,
         limit,
+        sortBy: sortBy || undefined,
+        sortOrder: sortOrder || undefined,
       }),
   });
 
@@ -137,10 +143,10 @@ export default function PurchasesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Proveedor</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead>Estado</TableHead>
+                  <SortableTableHead field="createdAt" label="Fecha" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="supplier" label="Proveedor" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortableTableHead field="total" label="Total" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} className="text-right" />
+                  <SortableTableHead field="status" label="Estado" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -160,6 +166,7 @@ export default function PurchasesPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => setViewingPurchase(purchase)}
+                        aria-label="Ver detalles"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -167,6 +174,7 @@ export default function PurchasesPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleExportPdf(purchase.id)}
+                        aria-label="Exportar PDF"
                       >
                         <FileText className="h-4 w-4" />
                       </Button>
@@ -176,6 +184,7 @@ export default function PurchasesPage() {
                           size="icon"
                           className="text-destructive"
                           onClick={() => setCancelingPurchase(purchase)}
+                          aria-label="Cancelar compra"
                         >
                           <X className="h-4 w-4" />
                         </Button>

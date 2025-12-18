@@ -90,6 +90,14 @@ export const productsApi = {
     page?: number;
     limit?: number;
     active?: boolean;
+    sortBy?: string;
+    sortOrder?: string;
+    priceMin?: number;
+    priceMax?: number;
+    stockMin?: number;
+    stockMax?: number;
+    lowStockOnly?: boolean;
+    zeroStockOnly?: boolean;
   } = {}) =>
     fetchApi<PaginatedResponse<Product>>(
       `/products${buildQueryString(params)}`
@@ -126,6 +134,8 @@ export const clientsApi = {
     page?: number;
     limit?: number;
     active?: boolean;
+    sortBy?: string;
+    sortOrder?: string;
   } = {}) =>
     fetchApi<PaginatedResponse<Client>>(
       `/clients${buildQueryString(params)}`
@@ -162,6 +172,8 @@ export const suppliersApi = {
     page?: number;
     limit?: number;
     active?: boolean;
+    sortBy?: string;
+    sortOrder?: string;
   } = {}) =>
     fetchApi<PaginatedResponse<Supplier>>(
       `/suppliers${buildQueryString(params)}`
@@ -199,6 +211,8 @@ export const salesApi = {
     from?: string;
     to?: string;
     customerId?: string;
+    sortBy?: string;
+    sortOrder?: string;
   } = {}) =>
     fetchApi<PaginatedResponse<Sale>>(`/sales${buildQueryString(params)}`),
 
@@ -233,6 +247,8 @@ export const purchasesApi = {
     from?: string;
     to?: string;
     supplierId?: string;
+    sortBy?: string;
+    sortOrder?: string;
   } = {}) =>
     fetchApi<PaginatedResponse<Purchase>>(
       `/purchases${buildQueryString(params)}`
@@ -269,6 +285,8 @@ export const cashApi = {
     to?: string;
     type?: "IN" | "OUT";
     method?: "CASH" | "CARD" | "TRANSFER";
+    sortBy?: string;
+    sortOrder?: string;
   } = {}) =>
     fetchApi<PaginatedResponse<CashMovement>>(
       `/cash/movements${buildQueryString(params)}`
@@ -331,6 +349,8 @@ export const auditApi = {
     q?: string;
     page?: number;
     limit?: number;
+    sortBy?: string;
+    sortOrder?: string;
   } = {}) =>
     fetchApi<PaginatedResponse<AuditLog>>(`/audit${buildQueryString(params)}`),
 
