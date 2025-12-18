@@ -60,26 +60,28 @@ export function ClientFormDialog({
   });
 
   useEffect(() => {
-    if (client) {
-      form.reset({
-        name: client.name,
-        document: client.document || "",
-        phone: client.phone || "",
-        email: client.email || "",
-        address: client.address || "",
-        notes: client.notes || "",
-      });
-    } else {
-      form.reset({
-        name: "",
-        document: "",
-        phone: "",
-        email: "",
-        address: "",
-        notes: "",
-      });
+    if (open) {
+      if (client) {
+        form.reset({
+          name: client.name,
+          document: client.document || "",
+          phone: client.phone || "",
+          email: client.email || "",
+          address: client.address || "",
+          notes: client.notes || "",
+        });
+      } else {
+        form.reset({
+          name: "",
+          document: "",
+          phone: "",
+          email: "",
+          address: "",
+          notes: "",
+        });
+      }
     }
-  }, [client, form]);
+  }, [open, client, form]);
 
   const handleSubmit = (data: FormData) => {
     const cleanData: CreateClientDto = {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import { salesApi, productsApi, clientsApi } from "@/lib/api";
@@ -29,14 +29,29 @@ interface SaleFormDialogProps {
   onSuccess: () => void;
 }
 
+const NONE_VALUE = "__none__";
+
 export function SaleFormDialog({ open, onOpenChange, onSuccess }: SaleFormDialogProps) {
   const [items, setItems] = useState<(CreateSaleItemDto & { product: Product })[]>([]);
-  const [customerId, setCustomerId] = useState<string>("");
+  const [customerId, setCustomerId] = useState<string>(NONE_VALUE);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
   const [discountPercent, setDiscountPercent] = useState<string>("0");
   const [notes, setNotes] = useState("");
-  const [selectedProductId, setSelectedProductId] = useState<string>("");
+  const [selectedProductId, setSelectedProductId] = useState<string>(NONE_VALUE);
   const [quantity, setQuantity] = useState<string>("1");
+
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (open) {
+      setItems([]);
+      setCustomerId(NONE_VALUE);
+      setPaymentMethod("CASH");
+      setDiscountPercent("0");
+      setNotes("");
+      setSelectedProductId(NONE_VALUE);
+      setQuantity("1");
+    }
+  }, [open]);
 
   const { data: productsData } = useQuery({
     queryKey: ["products", { active: true, limit: 500 }],
@@ -62,16 +77,16 @@ export function SaleFormDialog({ open, onOpenChange, onSuccess }: SaleFormDialog
 
   const resetForm = () => {
     setItems([]);
-    setCustomerId("");
+    setCustomerId(NONE_VALUE);
     setPaymentMethod("CASH");
     setDiscountPercent("0");
     setNotes("");
-    setSelectedProductId("");
+    setSelectedProductId(NONE_VALUE);
     setQuantity("1");
   };
 
   const handleAddItem = () => {
-    if (!selectedProductId) return;
+    if (!selectedProductId || selectedProductId === NONE_VALUE) return;
     const product = productsData?.items.find((p) => p.id === selectedProductId);
     if (!product) return;
 
@@ -95,7 +110,7 @@ export function SaleFormDialog({ open, onOpenChange, onSuccess }: SaleFormDialog
       setItems([...items, { productId: product.id, quantity: qty, product }]);
     }
 
-    setSelectedProductId("");
+    setSelectedProductId(NONE_VALUE);
     setQuantity("1");
   };
 
@@ -128,7 +143,7 @@ export function SaleFormDialog({ open, onOpenChange, onSuccess }: SaleFormDialog
     const saleData: CreateSaleDto = {
       items: items.map(({ productId, quantity }) => ({ productId, quantity })),
       paymentMethod,
-      ...(customerId && { customerId }),
+      ...(customerId && customerId !== NONE_VALUE && { customerId }),
       ...(Number(discountPercent) > 0 && { discountPercent: Number(discountPercent) }),
       ...(notes && { notes }),
     };
@@ -173,7 +188,7 @@ export function SaleFormDialog({ open, onOpenChange, onSuccess }: SaleFormDialog
               />
             </div>
             <div className="flex items-end">
-              <Button type="button" onClick={handleAddItem} disabled={!selectedProductId}>
+              <Button type="button" onClick={handleAddItem} disabled={!selectedProductId || selectedProductId === NONE_VALUE}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -235,7 +250,7 @@ export function SaleFormDialog({ open, onOpenChange, onSuccess }: SaleFormDialog
                   <SelectValue placeholder="Sin cliente" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin cliente</SelectItem>
+                  <SelectItem value={NONE_VALUE}>Sin cliente</SelectItem>
                   {clientsData?.items.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
                       {client.name}

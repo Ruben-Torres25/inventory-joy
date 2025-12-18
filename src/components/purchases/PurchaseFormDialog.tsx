@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import { purchasesApi, productsApi, suppliersApi } from "@/lib/api";
@@ -29,13 +29,27 @@ interface PurchaseFormDialogProps {
   onSuccess: () => void;
 }
 
+const NONE_VALUE = "__none__";
+
 export function PurchaseFormDialog({ open, onOpenChange, onSuccess }: PurchaseFormDialogProps) {
   const [items, setItems] = useState<(CreatePurchaseItemDto & { product: Product })[]>([]);
-  const [supplierId, setSupplierId] = useState<string>("");
+  const [supplierId, setSupplierId] = useState<string>(NONE_VALUE);
   const [notes, setNotes] = useState("");
-  const [selectedProductId, setSelectedProductId] = useState<string>("");
+  const [selectedProductId, setSelectedProductId] = useState<string>(NONE_VALUE);
   const [quantity, setQuantity] = useState<string>("1");
   const [unitCost, setUnitCost] = useState<string>("");
+
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (open) {
+      setItems([]);
+      setSupplierId(NONE_VALUE);
+      setNotes("");
+      setSelectedProductId(NONE_VALUE);
+      setQuantity("1");
+      setUnitCost("");
+    }
+  }, [open]);
 
   const { data: productsData } = useQuery({
     queryKey: ["products", { active: true, limit: 500 }],
@@ -61,15 +75,15 @@ export function PurchaseFormDialog({ open, onOpenChange, onSuccess }: PurchaseFo
 
   const resetForm = () => {
     setItems([]);
-    setSupplierId("");
+    setSupplierId(NONE_VALUE);
     setNotes("");
-    setSelectedProductId("");
+    setSelectedProductId(NONE_VALUE);
     setQuantity("1");
     setUnitCost("");
   };
 
   const handleAddItem = () => {
-    if (!selectedProductId || !unitCost) {
+    if (!selectedProductId || selectedProductId === NONE_VALUE || !unitCost) {
       toast.error("Selecciona un producto e ingresa el costo unitario");
       return;
     }
@@ -93,7 +107,7 @@ export function PurchaseFormDialog({ open, onOpenChange, onSuccess }: PurchaseFo
       setItems([...items, { productId: product.id, quantity: qty, unitCost: cost, product }]);
     }
 
-    setSelectedProductId("");
+    setSelectedProductId(NONE_VALUE);
     setQuantity("1");
     setUnitCost("");
   };
@@ -120,7 +134,7 @@ export function PurchaseFormDialog({ open, onOpenChange, onSuccess }: PurchaseFo
 
     const purchaseData: CreatePurchaseDto = {
       items: items.map(({ productId, quantity, unitCost }) => ({ productId, quantity, unitCost })),
-      ...(supplierId && { supplierId }),
+      ...(supplierId && supplierId !== NONE_VALUE && { supplierId }),
       ...(notes && { notes }),
     };
 
@@ -173,7 +187,7 @@ export function PurchaseFormDialog({ open, onOpenChange, onSuccess }: PurchaseFo
               />
             </div>
             <div className="flex items-end">
-              <Button type="button" onClick={handleAddItem} disabled={!selectedProductId || !unitCost}>
+              <Button type="button" onClick={handleAddItem} disabled={!selectedProductId || selectedProductId === NONE_VALUE || !unitCost}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -243,7 +257,7 @@ export function PurchaseFormDialog({ open, onOpenChange, onSuccess }: PurchaseFo
                 <SelectValue placeholder="Sin proveedor" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Sin proveedor</SelectItem>
+                <SelectItem value={NONE_VALUE}>Sin proveedor</SelectItem>
                 {suppliersData?.items.map((supplier) => (
                   <SelectItem key={supplier.id} value={supplier.id}>
                     {supplier.name}
