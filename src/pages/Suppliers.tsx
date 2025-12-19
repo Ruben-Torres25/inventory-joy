@@ -56,11 +56,13 @@ export default function SuppliersPage() {
     mutationFn: suppliersApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suppliers"] });
-      toast.success("Proveedor creado correctamente");
+      toast.success("Proveedor creado", {
+        description: "El proveedor ha sido registrado correctamente",
+      });
       setFormOpen(false);
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error("Error al crear proveedor", { description: error.message });
     },
   });
 
@@ -69,11 +71,13 @@ export default function SuppliersPage() {
       suppliersApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suppliers"] });
-      toast.success("Proveedor actualizado correctamente");
+      toast.success("Proveedor actualizado", {
+        description: "Los datos han sido guardados correctamente",
+      });
       setEditingSupplier(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error("Error al actualizar", { description: error.message });
     },
   });
 
@@ -81,11 +85,13 @@ export default function SuppliersPage() {
     mutationFn: (id: string) => suppliersApi.update(id, { isActive: false }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suppliers"] });
-      toast.success("Proveedor desactivado correctamente");
+      toast.warning("Proveedor desactivado", {
+        description: "El proveedor ha sido marcado como inactivo",
+      });
       setDeactivatingSupplier(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error("Error al desactivar", { description: error.message });
     },
   });
 

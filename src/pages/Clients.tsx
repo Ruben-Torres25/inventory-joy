@@ -56,11 +56,15 @@ export default function ClientsPage() {
     mutationFn: clientsApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      toast.success("Cliente creado correctamente");
+      toast.success("Cliente creado", {
+        description: "El cliente ha sido registrado correctamente",
+      });
       setFormOpen(false);
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error("Error al crear cliente", {
+        description: error.message,
+      });
     },
   });
 
@@ -69,11 +73,15 @@ export default function ClientsPage() {
       clientsApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      toast.success("Cliente actualizado correctamente");
+      toast.success("Cliente actualizado", {
+        description: "Los datos han sido guardados correctamente",
+      });
       setEditingClient(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error("Error al actualizar", {
+        description: error.message,
+      });
     },
   });
 
@@ -81,11 +89,15 @@ export default function ClientsPage() {
     mutationFn: (id: string) => clientsApi.update(id, { isActive: false }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      toast.success("Cliente desactivado correctamente");
+      toast.warning("Cliente desactivado", {
+        description: "El cliente ha sido marcado como inactivo",
+      });
       setDeactivatingClient(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error("Error al desactivar", {
+        description: error.message,
+      });
     },
   });
 

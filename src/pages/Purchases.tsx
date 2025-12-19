@@ -71,11 +71,18 @@ export default function PurchasesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["purchases"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast.success("Compra cancelada correctamente");
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.warning("Compra cancelada", {
+        description: "El stock de los productos ha sido revertido",
+        duration: 5000,
+      });
       setCancelingPurchase(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error("Error al cancelar la compra", {
+        description: error.message,
+        duration: 5000,
+      });
     },
   });
 
