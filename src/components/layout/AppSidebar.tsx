@@ -10,6 +10,7 @@ import {
   BarChart3,
   History,
   ChevronLeft,
+  Zap,
 } from "lucide-react";
 import {
   Sidebar,
@@ -37,6 +38,7 @@ const catalogNavItems = [
 ];
 
 const operationsNavItems = [
+  { title: "Venta Rápida", url: "/quick-sale", icon: Zap },
   { title: "Ventas", url: "/sales", icon: ShoppingCart },
   { title: "Compras", url: "/purchases", icon: ShoppingBag },
   { title: "Caja", url: "/cash", icon: Wallet },
