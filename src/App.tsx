@@ -14,6 +14,7 @@ import PurchasesPage from "@/pages/Purchases";
 import CashPage from "@/pages/Cash";
 import ReportsPage from "@/pages/Reports";
 import HistoryPage from "@/pages/History";
+import QuickSalePage from "@/pages/QuickSale";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -34,7 +35,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route element={<AppLayout />}>
-              <Route path="/" element={<DashboardPage />} />
+            <Route path="/" element={<DashboardPage />} />
+              <Route path="/quick-sale" element={<QuickSalePage />} />
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/clients" element={<ClientsPage />} />
               <Route path="/suppliers" element={<SuppliersPage />} />
