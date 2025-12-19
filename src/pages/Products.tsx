@@ -68,11 +68,15 @@ export default function ProductsPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => productsApi.delete(id),
     onSuccess: () => {
-      toast.success("Producto desactivado");
+      toast.success("Producto desactivado", {
+        description: "El producto ha sido marcado como inactivo",
+      });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       setDeleteProduct(null);
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => toast.error("Error al desactivar", {
+      description: err.message,
+    }),
   });
 
   const handleEdit = (product: Product) => {

@@ -71,11 +71,18 @@ export default function SalesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast.success("Venta cancelada correctamente");
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.warning("Venta cancelada", {
+        description: "El stock de los productos ha sido restaurado",
+        duration: 5000,
+      });
       setCancelingSale(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error("Error al cancelar la venta", {
+        description: error.message,
+        duration: 5000,
+      });
     },
   });
 
